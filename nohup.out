@@ -1,1 +1,13 @@
 Server running on http://localhost:3000
+<anonymous_script>:0
+
+
+[Error: SQLITE_CANTOPEN: unable to open database file
+Emitted 'error' event on Database instance at:
+] {
+  errno: 14,
+  code: 'SQLITE_CANTOPEN'
+}
+
+Node.js v24.11.1
+Server online at port 3000
