@@ -1,25 +1,22 @@
-# Use the official Node.js 24 image as the base
 FROM node:24-slim
 
-# Create and change to the app directory
 WORKDIR /usr/src/app
 
-# Copy application dependency manifests to the container image.
-# A wildcard is used to ensure both package.json AND package-lock.json are copied.
 COPY package*.json ./
-
-# Install dependencies
 RUN npm install --production
 
-# Copy local code to the container image.
 COPY . .
 
-# Create the /data directory for OpenShift persistence 
-# and set permissions so the app can write the database there
-RUN mkdir -p /data && chmod 777 /data
+# --- OPENSHIFT ANYUID COMPATIBILITY ---
+# 1. Create the data directory
+# 2. Change ownership to group 0 (root group)
+# 3. Change permissions so the group has write access (775)
+RUN mkdir -p /data && \
+    chown -R :0 /data && \
+    chmod -R g+w /data && \
+    chmod -R 775 /data
 
-# Expose the port the app runs on
 EXPOSE 3000
 
-# Run the web service on container startup.
+# OpenShift will run this as a random UID belonging to group 0
 CMD [ "node", "server.js" ]

@@ -1,0 +1,79 @@
+# --- PERSISTENT STORAGE ---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: spendwise-pvc
+  namespace: expense
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 3Gi
+---
+# --- DEPLOYMENT ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spendwise-pro
+  namespace: expense
+  labels:
+    app: spendwise
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spendwise
+  template:
+    metadata:
+      labels:
+        app: spendwise
+    spec:
+      securityContext:
+        # Ensures the volume is writable by the root group (0) used by OCP random UIDs
+        fsGroup: 0
+      containers:
+        - name: spendwise-app
+          image: docker.io/igfred/spendwise:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+          env:
+            - name: NODE_ENV
+              value: "production"
+          volumeMounts:
+            - name: db-storage
+              mountPath: /data
+      volumes:
+        - name: db-storage
+          persistentVolumeClaim:
+            claimName: spendwise-pvc
+---
+# --- SERVICE ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: spendwise-service
+  namespace: expense
+spec:
+  selector:
+    app: spendwise
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 3000
+---
+# --- ROUTE (OCP External URL) ---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: spendwise-route
+  namespace: expense
+spec:
+  to:
+    kind: Service
+    name: spendwise-service
+  port:
+    targetPort: 3000
+  tls:
+    termination: edge # Provides HTTPS

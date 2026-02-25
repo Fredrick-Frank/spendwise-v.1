@@ -1,0 +1,14 @@
+services:
+  spendwise:
+    build: .
+    container_name: spendwise-app
+    ports:
+      - "3000:3000"
+    volumes:
+      # This maps a local folder named 'spendwise_data' 
+      # to the '/data' folder inside the container
+      - ./spendwise_data:/data
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    restart: always
